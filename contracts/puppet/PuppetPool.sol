@@ -33,8 +33,7 @@ contract PuppetPool is ReentrancyGuard {
     function borrow(uint256 amount, address recipient) external payable nonReentrant {
         uint256 depositRequired = calculateDepositRequired(amount);
 
-        if (msg.value < depositRequired)
-            revert NotEnoughCollateral();
+        if (msg.value < depositRequired) revert NotEnoughCollateral();
 
         if (msg.value > depositRequired) {
             unchecked {
@@ -47,18 +46,17 @@ contract PuppetPool is ReentrancyGuard {
         }
 
         // Fails if the pool doesn't have enough tokens in liquidity
-        if(!token.transfer(recipient, amount))
-            revert TransferFailed();
+        if (!token.transfer(recipient, amount)) revert TransferFailed();
 
         emit Borrowed(msg.sender, recipient, depositRequired, amount);
     }
 
     function calculateDepositRequired(uint256 amount) public view returns (uint256) {
-        return amount * _computeOraclePrice() * DEPOSIT_FACTOR / 10 ** 18;
+        return (amount * _computeOraclePrice() * DEPOSIT_FACTOR) / 10 ** 18;
     }
 
     function _computeOraclePrice() private view returns (uint256) {
         // calculates the price of the token in wei according to Uniswap pair
-        return uniswapPair.balance * (10 ** 18) / token.balanceOf(uniswapPair);
+        return (uniswapPair.balance * (10 ** 18)) / token.balanceOf(uniswapPair);
     }
 }

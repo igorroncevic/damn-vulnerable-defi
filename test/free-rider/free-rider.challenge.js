@@ -3,11 +3,11 @@ const pairJson = require("@uniswap/v2-core/build/UniswapV2Pair.json");
 const factoryJson = require("@uniswap/v2-core/build/UniswapV2Factory.json");
 const routerJson = require("@uniswap/v2-periphery/build/UniswapV2Router02.json");
 
-const { ethers } = require('hardhat');
-const { expect } = require('chai');
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 
-describe('[Challenge] Free Rider', function () {
+describe("[Challenge] Free Rider", function () {
     let deployer, player, devs;
     let weth, token, uniswapFactory, uniswapRouter, uniswapPair, marketplace, nft, devsContract;
 
@@ -15,7 +15,7 @@ describe('[Challenge] Free Rider', function () {
     const NFT_PRICE = 15n * 10n ** 18n;
     const AMOUNT_OF_NFTS = 6;
     const MARKETPLACE_INITIAL_ETH_BALANCE = 90n * 10n ** 18n;
-    
+
     const PLAYER_INITIAL_ETH_BALANCE = 1n * 10n ** 17n;
 
     const BOUNTY = 45n * 10n ** 18n;
@@ -33,38 +33,35 @@ describe('[Challenge] Free Rider', function () {
         expect(await ethers.provider.getBalance(player.address)).to.eq(PLAYER_INITIAL_ETH_BALANCE);
 
         // Deploy WETH
-        weth = await (await ethers.getContractFactory('WETH', deployer)).deploy();
+        weth = await (await ethers.getContractFactory("WETH", deployer)).deploy();
 
         // Deploy token to be traded against WETH in Uniswap v2
-        token = await (await ethers.getContractFactory('DamnValuableToken', deployer)).deploy();
+        token = await (await ethers.getContractFactory("DamnValuableToken", deployer)).deploy();
 
         // Deploy Uniswap Factory and Router
-        uniswapFactory = await (new ethers.ContractFactory(factoryJson.abi, factoryJson.bytecode, deployer)).deploy(
+        uniswapFactory = await new ethers.ContractFactory(factoryJson.abi, factoryJson.bytecode, deployer).deploy(
             ethers.constants.AddressZero // _feeToSetter
         );
-        uniswapRouter = await (new ethers.ContractFactory(routerJson.abi, routerJson.bytecode, deployer)).deploy(
+        uniswapRouter = await new ethers.ContractFactory(routerJson.abi, routerJson.bytecode, deployer).deploy(
             uniswapFactory.address,
             weth.address
         );
-        
+
         // Approve tokens, and then create Uniswap v2 pair against WETH and add liquidity
         // The function takes care of deploying the pair automatically
-        await token.approve(
-            uniswapRouter.address,
-            UNISWAP_INITIAL_TOKEN_RESERVE
-        );
+        await token.approve(uniswapRouter.address, UNISWAP_INITIAL_TOKEN_RESERVE);
         await uniswapRouter.addLiquidityETH(
-            token.address,                                              // token to be traded against WETH
-            UNISWAP_INITIAL_TOKEN_RESERVE,                              // amountTokenDesired
-            0,                                                          // amountTokenMin
-            0,                                                          // amountETHMin
-            deployer.address,                                           // to
-            (await ethers.provider.getBlock('latest')).timestamp * 2,   // deadline
+            token.address, // token to be traded against WETH
+            UNISWAP_INITIAL_TOKEN_RESERVE, // amountTokenDesired
+            0, // amountTokenMin
+            0, // amountETHMin
+            deployer.address, // to
+            (await ethers.provider.getBlock("latest")).timestamp * 2, // deadline
             { value: UNISWAP_INITIAL_WETH_RESERVE }
         );
-        
+
         // Get a reference to the created Uniswap pair
-        uniswapPair = await (new ethers.ContractFactory(pairJson.abi, pairJson.bytecode, deployer)).attach(
+        uniswapPair = await new ethers.ContractFactory(pairJson.abi, pairJson.bytecode, deployer).attach(
             await uniswapFactory.getPair(token.address, weth.address)
         );
         expect(await uniswapPair.token0()).to.eq(weth.address);
@@ -73,13 +70,12 @@ describe('[Challenge] Free Rider', function () {
 
         // Deploy the marketplace and get the associated ERC721 token
         // The marketplace will automatically mint AMOUNT_OF_NFTS to the deployer (see `FreeRiderNFTMarketplace::constructor`)
-        marketplace = await (await ethers.getContractFactory('FreeRiderNFTMarketplace', deployer)).deploy(
-            AMOUNT_OF_NFTS,
-            { value: MARKETPLACE_INITIAL_ETH_BALANCE }
-        );
+        marketplace = await (
+            await ethers.getContractFactory("FreeRiderNFTMarketplace", deployer)
+        ).deploy(AMOUNT_OF_NFTS, { value: MARKETPLACE_INITIAL_ETH_BALANCE });
 
         // Deploy NFT contract
-        nft = await (await ethers.getContractFactory('DamnValuableNFT', deployer)).attach(await marketplace.token());
+        nft = await (await ethers.getContractFactory("DamnValuableNFT", deployer)).attach(await marketplace.token());
         expect(await nft.owner()).to.eq(ethers.constants.AddressZero); // ownership renounced
         expect(await nft.rolesOf(marketplace.address)).to.eq(await nft.MINTER_ROLE());
 
@@ -90,21 +86,20 @@ describe('[Challenge] Free Rider', function () {
         await nft.setApprovalForAll(marketplace.address, true);
 
         // Open offers in the marketplace
-        await marketplace.offerMany(
-            [0, 1, 2, 3, 4, 5],
-            [NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE]
-        );
+        await marketplace.offerMany([0, 1, 2, 3, 4, 5], [NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE]);
         expect(await marketplace.offersCount()).to.be.eq(6);
 
         // Deploy devs' contract, adding the player as the beneficiary
-        devsContract = await (await ethers.getContractFactory('FreeRiderRecovery', devs)).deploy(
+        devsContract = await (
+            await ethers.getContractFactory("FreeRiderRecovery", devs)
+        ).deploy(
             player.address, // beneficiary
-            nft.address, 
+            nft.address,
             { value: BOUNTY }
         );
     });
 
-    it('Execution', async function () {
+    it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
     });
 
@@ -119,9 +114,7 @@ describe('[Challenge] Free Rider', function () {
 
         // Exchange must have lost NFTs and ETH
         expect(await marketplace.offersCount()).to.be.eq(0);
-        expect(
-            await ethers.provider.getBalance(marketplace.address)
-        ).to.be.lt(MARKETPLACE_INITIAL_ETH_BALANCE);
+        expect(await ethers.provider.getBalance(marketplace.address)).to.be.lt(MARKETPLACE_INITIAL_ETH_BALANCE);
 
         // Player must have earned all ETH
         expect(await ethers.provider.getBalance(player.address)).to.be.gt(BOUNTY);

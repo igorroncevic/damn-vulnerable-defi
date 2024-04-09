@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'solmate/src/utils/FixedPointMathLib.sol';
-import 'solmate/src/utils/ReentrancyGuard.sol';
-import { SafeTransferLib, ERC4626, ERC20 } from 'solmate/src/mixins/ERC4626.sol';
-import 'solmate/src/auth/Owned.sol';
-import { IERC3156FlashBorrower, IERC3156FlashLender } from '@openzeppelin/contracts/interfaces/IERC3156.sol';
+import "solmate/src/utils/FixedPointMathLib.sol";
+import "solmate/src/utils/ReentrancyGuard.sol";
+import { SafeTransferLib, ERC4626, ERC20 } from "solmate/src/mixins/ERC4626.sol";
+import "solmate/src/auth/Owned.sol";
+import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 
 /**
  * @title UnstoppableVault
@@ -29,7 +29,7 @@ contract UnstoppableVault is IERC3156FlashLender, ReentrancyGuard, Owned, ERC462
 
     event FeeRecipientUpdated(address indexed newFeeRecipient);
 
-    constructor(ERC20 _token, address _owner, address _feeRecipient) ERC4626(_token, 'Oh Damn Valuable Token', 'oDVT') Owned(_owner) {
+    constructor(ERC20 _token, address _owner, address _feeRecipient) ERC4626(_token, "Oh Damn Valuable Token", "oDVT") Owned(_owner) {
         feeRecipient = _feeRecipient;
         emit FeeRecipientUpdated(_feeRecipient);
     }
@@ -103,7 +103,7 @@ contract UnstoppableVault is IERC3156FlashLender, ReentrancyGuard, Owned, ERC462
         // transfer tokens out + execute callback on receiver
         ERC20(_token).safeTransfer(address(receiver), amount);
         // callback must return magic value, otherwise assume it failed
-        if (receiver.onFlashLoan(msg.sender, address(asset), amount, fee, data) != keccak256('IERC3156FlashBorrower.onFlashLoan'))
+        if (receiver.onFlashLoan(msg.sender, address(asset), amount, fee, data) != keccak256("IERC3156FlashBorrower.onFlashLoan"))
             revert CallbackFailed();
 
         // pull amount + fee from receiver, then pay the fee to the recipient

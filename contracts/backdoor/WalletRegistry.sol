@@ -37,19 +37,14 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
     error OwnerIsNotABeneficiary();
     error InvalidFallbackManager(address fallbackManager);
 
-    constructor(
-        address masterCopyAddress,
-        address walletFactoryAddress,
-        address tokenAddress,
-        address[] memory initialBeneficiaries
-    ) {
+    constructor(address masterCopyAddress, address walletFactoryAddress, address tokenAddress, address[] memory initialBeneficiaries) {
         _initializeOwner(msg.sender);
 
         masterCopy = masterCopyAddress;
         walletFactory = walletFactoryAddress;
         token = IERC20(tokenAddress);
 
-        for (uint256 i = 0; i < initialBeneficiaries.length;) {
+        for (uint256 i = 0; i < initialBeneficiaries.length; ) {
             unchecked {
                 beneficiaries[initialBeneficiaries[i]] = true;
                 ++i;
@@ -65,11 +60,9 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
      * @notice Function executed when user creates a Gnosis Safe wallet via GnosisSafeProxyFactory::createProxyWithCallback
      *          setting the registry's address as the callback.
      */
-    function proxyCreated(GnosisSafeProxy proxy, address singleton, bytes calldata initializer, uint256)
-        external
-        override
-    {
-        if (token.balanceOf(address(this)) < PAYMENT_AMOUNT) { // fail early
+    function proxyCreated(GnosisSafeProxy proxy, address singleton, bytes calldata initializer, uint256) external override {
+        if (token.balanceOf(address(this)) < PAYMENT_AMOUNT) {
+            // fail early
             revert NotEnoughFunds();
         }
 
@@ -110,8 +103,7 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
         }
 
         address fallbackManager = _getFallbackManager(walletAddress);
-        if (fallbackManager != address(0))
-            revert InvalidFallbackManager(fallbackManager);
+        if (fallbackManager != address(0)) revert InvalidFallbackManager(fallbackManager);
 
         // Remove owner as beneficiary
         beneficiaries[walletOwner] = false;
@@ -124,12 +116,6 @@ contract WalletRegistry is IProxyCreationCallback, Ownable {
     }
 
     function _getFallbackManager(address payable wallet) private view returns (address) {
-        return abi.decode(
-            GnosisSafe(wallet).getStorageAt(
-                uint256(keccak256("fallback_manager.handler.address")),
-                0x20
-            ),
-            (address)
-        );
+        return abi.decode(GnosisSafe(wallet).getStorageAt(uint256(keccak256("fallback_manager.handler.address")), 0x20), (address));
     }
 }

@@ -25,31 +25,21 @@ contract FreeRiderRecovery is ReentrancyGuard, IERC721Receiver {
     error StillNotOwningToken(uint256 tokenId);
 
     constructor(address _beneficiary, address _nft) payable {
-        if (msg.value != PRIZE)
-            revert NotEnoughFunding();
+        if (msg.value != PRIZE) revert NotEnoughFunding();
         beneficiary = _beneficiary;
         nft = IERC721(_nft);
         IERC721(_nft).setApprovalForAll(msg.sender, true);
     }
 
     // Read https://eips.ethereum.org/EIPS/eip-721 for more info on this function
-    function onERC721Received(address, address, uint256 _tokenId, bytes memory _data)
-        external
-        override
-        nonReentrant
-        returns (bytes4)
-    {
-        if (msg.sender != address(nft))
-            revert CallerNotNFT();
+    function onERC721Received(address, address, uint256 _tokenId, bytes memory _data) external override nonReentrant returns (bytes4) {
+        if (msg.sender != address(nft)) revert CallerNotNFT();
 
-        if (tx.origin != beneficiary)
-            revert OriginNotBeneficiary();
+        if (tx.origin != beneficiary) revert OriginNotBeneficiary();
 
-        if (_tokenId > 5)
-            revert InvalidTokenID(_tokenId);
+        if (_tokenId > 5) revert InvalidTokenID(_tokenId);
 
-        if (nft.ownerOf(_tokenId) != address(this))
-            revert StillNotOwningToken(_tokenId);
+        if (nft.ownerOf(_tokenId) != address(this)) revert StillNotOwningToken(_tokenId);
 
         if (++received == 6) {
             address recipient = abi.decode(_data, (address));

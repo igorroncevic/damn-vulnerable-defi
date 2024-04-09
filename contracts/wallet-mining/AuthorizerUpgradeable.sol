@@ -18,7 +18,7 @@ contract AuthorizerUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgrade
         __Ownable_init();
         __UUPSUpgradeable_init();
 
-        for (uint256 i = 0; i < _wards.length;) {
+        for (uint256 i = 0; i < _wards.length; ) {
             _rely(_wards[i], _aims[i]);
             unchecked {
                 i++;

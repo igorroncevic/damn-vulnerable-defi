@@ -30,7 +30,7 @@ abstract contract AuthorizedExecutor is ReentrancyGuard {
             revert AlreadyInitialized();
         }
 
-        for (uint256 i = 0; i < ids.length;) {
+        for (uint256 i = 0; i < ids.length; ) {
             unchecked {
                 permissions[ids[i]] = true;
                 ++i;

@@ -29,7 +29,7 @@ contract SideEntranceLenderPool {
 
     function withdraw() external {
         uint256 amount = balances[msg.sender];
-        
+
         delete balances[msg.sender];
         emit Withdraw(msg.sender, amount);
 
@@ -39,9 +39,8 @@ contract SideEntranceLenderPool {
     function flashLoan(uint256 amount) external {
         uint256 balanceBefore = address(this).balance;
 
-        IFlashLoanEtherReceiver(msg.sender).execute{value: amount}();
+        IFlashLoanEtherReceiver(msg.sender).execute{ value: amount }();
 
-        if (address(this).balance < balanceBefore)
-            revert RepayFailed();
+        if (address(this).balance < balanceBefore) revert RepayFailed();
     }
 }

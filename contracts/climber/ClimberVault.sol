@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "solady/src/utils/SafeTransferLib.sol";
 
 import "./ClimberTimelock.sol";
-import {WITHDRAWAL_LIMIT, WAITING_PERIOD} from "./ClimberConstants.sol";
-import {CallerNotSweeper, InvalidWithdrawalAmount, InvalidWithdrawalTime} from "./ClimberErrors.sol";
+import { WITHDRAWAL_LIMIT, WAITING_PERIOD } from "./ClimberConstants.sol";
+import { CallerNotSweeper, InvalidWithdrawalAmount, InvalidWithdrawalTime } from "./ClimberErrors.sol";
 
 /**
  * @title ClimberVault
