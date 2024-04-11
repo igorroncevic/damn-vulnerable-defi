@@ -21,6 +21,7 @@ contract SideEntranceLenderPool {
     event Withdraw(address indexed who, uint256 amount);
 
     function deposit() external payable {
+        // @audit-issue deposit usable during flashloan
         unchecked {
             balances[msg.sender] += msg.value;
         }
@@ -41,6 +42,7 @@ contract SideEntranceLenderPool {
 
         IFlashLoanEtherReceiver(msg.sender).execute{ value: amount }();
 
+        // @audit-issue weak check, balance is easily abused via deposit
         if (address(this).balance < balanceBefore) revert RepayFailed();
     }
 }
