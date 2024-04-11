@@ -66,6 +66,8 @@ contract TheRewarderPool {
     }
 
     function distributeRewards() public returns (uint256 rewards) {
+        // @audit-issue doesn't take how longed the user has staked their tokens into consideration,
+        // allowing for flashloan attacks
         if (isNewRewardsRound()) {
             _recordSnapshot();
         }

