@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../DamnValuableTokenSnapshot.sol";
 import "./ISimpleGovernance.sol";
+
 /**
  * @title SimpleGovernance
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
@@ -101,6 +102,7 @@ contract SimpleGovernance is ISimpleGovernance {
     }
 
     function _hasEnoughVotes(address who) private view returns (bool) {
+        // @audit-issue weak conditions, snapshot can be abused via flashloan
         uint256 balance = _governanceToken.getBalanceAtLastSnapshot(who);
         uint256 halfTotalSupply = _governanceToken.getTotalSupplyAtLastSnapshot() / 2;
         return balance > halfTotalSupply;
