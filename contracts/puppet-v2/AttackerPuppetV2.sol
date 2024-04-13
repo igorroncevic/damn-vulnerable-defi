@@ -3,18 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-interface IUniswapV2Router {
-    function WETH() external pure returns (address);
-
-    function swapExactTokensForTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external returns (uint[] memory amounts);
-}
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 
 interface IPool {
     function borrow(uint256 amount) external;
@@ -28,7 +17,7 @@ interface IWETH is IERC20 {
 
 contract AttackerPuppetV2 {
     IPool private immutable pool;
-    IUniswapV2Router private immutable router;
+    IUniswapV2Router01 private immutable router;
 
     IERC20 private immutable token;
     IWETH private immutable weth;
@@ -47,7 +36,7 @@ contract AttackerPuppetV2 {
         uint256 _playerInitialBalance
     ) {
         pool = IPool(_pool);
-        router = IUniswapV2Router(_router);
+        router = IUniswapV2Router01(_router);
 
         token = IERC20(_token);
         weth = IWETH(router.WETH());

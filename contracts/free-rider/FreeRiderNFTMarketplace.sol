@@ -55,6 +55,7 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
         }
     }
 
+    // @note Owners offering their NFTs for sale (not buyers offering to buy)
     function _offerOne(uint256 tokenId, uint256 price) private {
         DamnValuableNFT _token = token; // gas savings
 
@@ -62,6 +63,7 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
 
         if (msg.sender != _token.ownerOf(tokenId)) revert CallerNotOwner(tokenId);
 
+        // @note owner's tokens should be approved for markerplace (`address(this)`) (why all?)
         if (_token.getApproved(tokenId) != address(this) && !_token.isApprovedForAll(msg.sender, address(this))) revert InvalidApproval();
 
         offers[tokenId] = price;
@@ -87,6 +89,8 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
         uint256 priceToPay = offers[tokenId];
         if (priceToPay == 0) revert TokenNotOffered(tokenId);
 
+        // @audit-issue msg.value compared to a price of single token instead of
+        // looking at the bigger picture and be compared to batch from `buyMany`
         if (msg.value < priceToPay) revert InsufficientPayment();
 
         --offersCount;
@@ -96,6 +100,9 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
         _token.safeTransferFrom(_token.ownerOf(tokenId), msg.sender, tokenId);
 
         // pay seller using cached token
+        // @audit-issue new owner is now the buyer, not the seller (lol) -> free ETH
+        // free ETH means we can pay back the UniswapV2 flash swap
+        // https://docs.uniswap.org/contracts/v2/guides/smart-contract-integration/using-flash-swaps
         payable(_token.ownerOf(tokenId)).sendValue(priceToPay);
 
         emit NFTBought(msg.sender, tokenId, priceToPay);

