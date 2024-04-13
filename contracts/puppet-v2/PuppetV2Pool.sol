@@ -6,7 +6,9 @@ import "@uniswap/v2-periphery/contracts/libraries/SafeMath.sol";
 
 interface IERC20 {
     function transfer(address to, uint256 amount) external returns (bool);
+
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
+
     function balanceOf(address account) external returns (uint256);
 }
 
@@ -60,6 +62,7 @@ contract PuppetV2Pool {
 
     // Fetch the price from Uniswap v2 using the official libraries
     function _getOracleQuote(uint256 amount) private view returns (uint256) {
+        // @audit-issue once again, weak calculation, price calculated based on manipulateable values, such as reserves/balances
         (uint256 reservesWETH, uint256 reservesToken) = UniswapV2Library.getReserves(_uniswapFactory, address(_weth), address(_token));
         return UniswapV2Library.quote(amount.mul(10 ** 18), reservesToken, reservesWETH);
     }
