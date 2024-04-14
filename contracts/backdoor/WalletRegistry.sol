@@ -15,12 +15,12 @@ import "@gnosis.pm/safe-contracts/contracts/proxies/IProxyCreationCallback.sol";
  * @author Damn Vulnerable DeFi (https://damnvulnerabledefi.xyz)
  */
 contract WalletRegistry is IProxyCreationCallback, Ownable {
-    uint256 private constant EXPECTED_OWNERS_COUNT = 1;
-    uint256 private constant EXPECTED_THRESHOLD = 1;
-    uint256 private constant PAYMENT_AMOUNT = 10 ether;
+    uint256 private constant EXPECTED_OWNERS_COUNT = 1; // @note owner of the proxy
+    uint256 private constant EXPECTED_THRESHOLD = 1; // @note numer of signers to confirm a transaction
+    uint256 private constant PAYMENT_AMOUNT = 10 ether; // @note 10 DVT tokens as reward
 
-    address public immutable masterCopy;
-    address public immutable walletFactory;
+    address public immutable masterCopy; // @note GnosisSafe
+    address public immutable walletFactory; // @note GnosisSafeProxyFactory
     IERC20 public immutable token;
 
     mapping(address => bool) public beneficiaries;
