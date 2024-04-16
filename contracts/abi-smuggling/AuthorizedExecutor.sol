@@ -49,6 +49,7 @@ abstract contract AuthorizedExecutor is ReentrancyGuard {
     function execute(address target, bytes calldata actionData) external nonReentrant returns (bytes memory) {
         // Read the 4-bytes selector at the beginning of `actionData`
         bytes4 selector;
+        // @audit-issue offset is hardcoded and data is expected to come at this offset -> but what if it doesn't?
         uint256 calldataOffset = 4 + 32 * 3; // calldata position where `actionData` begins
         assembly {
             selector := calldataload(calldataOffset)
